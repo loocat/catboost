@@ -245,7 +245,8 @@ class WidgetOptions(object):
 
     @staticmethod
     def initialize_options(command):
-        command.no_widget = False
+        # command.no_widget = False
+        command.no_widget = True
         command.prebuilt_widget = False
 
     @staticmethod

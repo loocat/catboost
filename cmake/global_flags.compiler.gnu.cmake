@@ -3,7 +3,6 @@ set(_GNU_COMMON_C_CXX_FLAGS "\
   -fno-common \
   -fcolor-diagnostics \
   -faligned-allocation \
-  -fdebug-default-version=4 \
   -ffunction-sections \
   -fdata-sections \
   -Wall \

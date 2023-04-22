@@ -3,8 +3,6 @@ if (HAVE_CUDA)
       message(FATAL_ERROR "Build with CUDA requires at least cmake 3.17.0")
   endif()
 
-  enable_language(CUDA)
-
   include(global_flags)
   include(common)
 
@@ -98,11 +96,11 @@ if (HAVE_CUDA)
       list(APPEND localCudaCompilerOptions ${cxxFlag})
     endwhile()
 
-    if (isHostCompilerClang)
-      # nvcc concatenates the sources for clang, and clang reports unused
-      # things from .h files as if they they were defined in a .cpp file.
-      list(APPEND localCudaCommonFlags -Wno-unused-function -Wno-unused-parameter)
-    endif()
+    # if (isHostCompilerClang)
+    #   # nvcc concatenates the sources for clang, and clang reports unused
+    #   # things from .h files as if they they were defined in a .cpp file.
+    #   list(APPEND localCudaCommonFlags -Wno-unused-function -Wno-unused-parameter)
+    # endif()
 
     list(JOIN localCudaCommonFlags " " joinedLocalCudaCommonFlags)
     string(REPLACE "$<SEMICOLON>" ";" joinedLocalCudaCommonFlags "${joinedLocalCudaCommonFlags}")
@@ -117,6 +115,8 @@ if (HAVE_CUDA)
     " --expt-extended-lambda"
     # Allow host code to invoke __device__ constexpr functions and vice versa
     " --expt-relaxed-constexpr"
+    " -allow-unsupported-compiler"
+    " -w"
   )
 
   set(NVCC_STD_VER 14)
@@ -145,9 +145,9 @@ if (HAVE_CUDA)
 
   find_package(CUDAToolkit REQUIRED)
 
-  if(${CMAKE_CUDA_COMPILER_VERSION} VERSION_GREATER_EQUAL "11.2")
-    string(APPEND CMAKE_CUDA_FLAGS " --threads 0")
-  endif()
+  # if(${CMAKE_CUDA_COMPILER_VERSION} VERSION_GREATER_EQUAL "11.2")
+  #   string(APPEND CMAKE_CUDA_FLAGS " --threads 0")
+  # endif()
 
   message(VERBOSE "CMAKE_CUDA_FLAGS = \"${CMAKE_CUDA_FLAGS}\"")
 

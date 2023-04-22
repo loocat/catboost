@@ -16,7 +16,8 @@ from enum import Enum
 
 sys.dont_write_bytecode = True
 
-PL_LINUX = ['manylinux1_x86_64']
+PL_LINUX_X86_64 = ['manylinux1_x86_64']
+PL_LINUX_AARCH64 = ['manylinux1_aarch64']
 PL_MACOS_X86_64 = [
     'macosx_10_6_intel',
     'macosx_10_9_intel',
@@ -54,17 +55,19 @@ class PythonTrait(object):
         if self.build_system == BUILD_SYSTEM.CMAKE:
             cmd = ([
                 'cd', arc_root,
+                '&&',
                 'cmake',
                 '-B', self.out_root,
-                '-G', '"Unix Makefiles"',
+                '-G', '\"Unix Makefiles\"',
                 '-DCMAKE_BUILD_TYPE=Release',
-                '-DCMAKE_TOOLCHAIN_FILE=' + os.path.join(self.arc_root, 'catboost', 'build', 'toolchains', 'clang.toolchain'),
-                '-DCMAKE_POSITION_INDEPENDENT_CODE=On'
+                '-DCMAKE_TOOLCHAIN_FILE=' + os.path.join(self.arc_root, 'build', 'toolchains', 'clang.toolchain'),
+                '-DCMAKE_POSITION_INDEPENDENT_CODE=On',
+                '-DHAVE_CUDA=yes' if task_type == 'GPU' else '-DHAVE_CUDA=no'
             ] + self.tail_args + [
-                '&&'
-                'cd', self.tmp_build_dir,
                 '&&',
-                'make', module_name
+                'cd', os.path.join(self.out_root, arc_path), #self.tmp_build_dir,
+                '&&',
+                'make -j`nproc`', module_name
             ])
         elif self.build_system == BUILD_SYSTEM.YA:
             cmd = [
@@ -126,7 +129,8 @@ def mine_platform_tag_string(tail_args):
 def gen_platform_tags():
     import distutils.util
 
-    value = distutils.util.get_platform().replace("linux", "manylinux1")
+    # value = distutils.util.get_platform().replace("linux", "manylinux1")
+    value = distutils.util.get_platform()
     value = value.replace('-', '_').replace('.', '_')
     if 'macosx' in value:
         return PL_MACOS_X86_64
@@ -156,7 +160,10 @@ def transform_target_platforms(target_platforms):
     platform_tags = set()
     for platform in target_platforms:
         if 'linux' in platform:
-            platform_tags = platform_tags.union(PL_LINUX)
+            if 'aarch64' in platform:
+                platform_tags = platform_tags.union(PL_LINUX_AARCH64)
+            else:
+                platform_tags = platform_tags.union(PL_LINUX_X86_64)
         elif 'darwin' in platform:
             if 'arm64' in platform:
                platform_tags = platform_tags.union(PL_MACOS_ARM64)
@@ -343,7 +350,8 @@ def build(build_system, arc_root, out_root, tail_args, should_build_widget, shou
     ver = get_version(os.path.join(os.getcwd(), 'version.py'))
     pkg_name = os.environ.get('CATBOOST_PACKAGE_NAME', 'catboost')
 
-    for task_type in (['GPU', 'CPU'] if should_build_with_cuda else ['CPU']):
+    # for task_type in (['GPU', 'CPU'] if should_build_with_cuda else ['CPU']):
+    for task_type in (['GPU'] if should_build_with_cuda else ['CPU']):
         try:
             print('Trying to build {} version'.format(task_type), file=sys.stderr)
 
@@ -356,7 +364,7 @@ def build(build_system, arc_root, out_root, tail_args, should_build_widget, shou
 
                 cmd = py_trait.gen_cmd(arc_path, module_name, task_type)
                 print(' '.join(cmd), file=sys.stderr)
-                subprocess.check_call(cmd)
+                subprocess.check_call(' '.join(cmd), shell=True)
                 print('Build {} native library: OK'.format(module_name), file=sys.stderr)
                 src = os.path.join(py_trait.out_root, arc_path, py_trait.built_so_name(module_name))
                 dst = '.'.join([src, task_type])
@@ -385,6 +393,10 @@ if __name__ == '__main__':
 
         args, tail_args = args_parser.parse_known_args()
         build_system = BUILD_SYSTEM[args.build_system]
+
+        print('out_root =', out_root)
+        print('build_widget =', args.build_widget)
+        print('build_with_cuda =', args.build_with_cuda)
 
         wheel_name = build(build_system, arc_root, out_root, tail_args, args.build_widget == 'yes', args.build_with_cuda == 'yes')
         print(wheel_name)

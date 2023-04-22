@@ -25,6 +25,9 @@ enable_testing()
 # Can't set it in cuda.cmake because of CMake policy subdirectory stack rules
 cmake_policy(SET CMP0104 OLD)
 
+set(CMAKE_THREAD_LIBS_INIT "-lpthread")
+set(CONAN_CMD "conan")
+
 include(cmake/archive.cmake)
 include(cmake/common.cmake)
 include(cmake/conan.cmake)
@@ -47,10 +50,14 @@ else()
     BUILD missing
     REMOTE conancenter
     SETTINGS ${settings}
-      ENV "CONAN_CMAKE_GENERATOR=${CMAKE_GENERATOR}"
-      CONF "tools.cmake.cmaketoolchain:generator=${CMAKE_GENERATOR}"
+      ENV "CONAN_CMAKE_GENERATOR=\"${CMAKE_GENERATOR}\""
+      CONF "tools.cmake.cmaketoolchain:generator=\"${CMAKE_GENERATOR}\""
   )
 endif()
+
+# message("CMAKE_SYSTEM_NAME:" ${CMAKE_SYSTEM_NAME})
+# message("CMAKE_SYSTEM_PROCESSOR:" ${CMAKE_SYSTEM_PROCESSOR})
+# message("HAVE_CUDA:" ${HAVE_CUDA})
 
 if (CMAKE_SYSTEM_NAME STREQUAL "Linux" AND CMAKE_SYSTEM_PROCESSOR STREQUAL "x86_64" AND NOT HAVE_CUDA)
   include(CMakeLists.linux-x86_64.txt)
