@@ -810,7 +810,7 @@ def test_equivalence_of_pools_from_pandas_dataframe_with_different_cat_features_
 
     for cat_features_dtype in ['object', 'category']:
         columns_for_new_df = OrderedDict()
-        for column_name, column_data in df.iteritems():
+        for column_name, column_data in df.items():
             if column_name in cat_features:
                 column_data = column_data.astype(cat_features_dtype)
             columns_for_new_df.setdefault(column_name, column_data)
@@ -5113,6 +5113,15 @@ def test_util_eval_metric_subgroups(metric):
     return local_canonical_file(preds_path)
 
 
+def test_util_eval_metric_groupwise_metric_without_group_data():
+    with pytest.raises(CatBoostError):
+        eval_metric(
+            [-1, 0, 0, 0.5, 0.2, 0.1, -2.39, 1.9],
+            [0, 1, 0, -1, 0.7, 0, -2, 2],
+            'NDCG'
+        )
+
+
 def test_option_used_ram_limit():
     for limit in [1000, 1234.56, 0, 0.0, 0.5,
                   '100', '34.56', '0', '0.0', '0.5',
@@ -6308,12 +6317,18 @@ class Metrics(object):
             'Poisson',
             'Quantile',
             'RMSE',
-            'RMSEWithUncertainty'
             'LogLinQuantile',
             'SMAPE',
             'R2',
             'MSLE',
             'MedianAbsoluteError',
+        }
+        return filter(lambda name: name in supported_by, names)
+
+    @staticmethod
+    def filter_uncertainty(names):
+        supported_by = {
+            'RMSEWithUncertainty',
         }
         return filter(lambda name: name in supported_by, names)
 
@@ -6483,6 +6498,29 @@ class TestUseWeights(object):
         return (cb, test_pool)
 
     @pytest.fixture
+    def a_uncertainty_learner(self, task_type):
+        train_features_df, cat_features = load_pool_features_as_df(TRAIN_FILE, CD_FILE)
+        test_features_df, _ = load_pool_features_as_df(TEST_FILE, CD_FILE)
+
+        prng = np.random.RandomState(seed=20181219)
+        train_pool = Pool(
+            data=train_features_df,
+            label=_generate_random_target(train_features_df.shape[0], prng=prng),
+            cat_features=cat_features
+        )
+        test_pool = Pool(
+            data=test_features_df,
+            label=_generate_random_target(test_features_df.shape[0], prng=prng),
+            cat_features=cat_features
+        )
+        set_random_weight(train_pool, prng=prng)
+        set_random_weight(test_pool, prng=prng)
+
+        cb = CatBoostRegressor(loss_function='RMSEWithUncertainty', iterations=3, task_type=task_type, devices='0')
+        cb.fit(train_pool)
+        return (cb, test_pool)
+
+    @pytest.fixture
     def a_classification_learner(self, task_type):
         train_features_df, cat_features = load_pool_features_as_df(TRAIN_FILE, CD_FILE)
         test_features_df, _ = load_pool_features_as_df(TEST_FILE, CD_FILE)
@@ -6535,6 +6573,11 @@ class TestUseWeights(object):
     @pytest.mark.parametrize('metric_name', Metrics('use_weights regression').get_cases())
     def test_regression_metric(self, a_regression_learner, metric_name):
         cb, test_pool = a_regression_learner
+        self.conclude(cb, test_pool, metric_name)
+
+    @pytest.mark.parametrize('metric_name', Metrics('use_weights uncertainty').get_cases())
+    def test_uncertainty_metric(self, a_uncertainty_learner, metric_name):
+        cb, test_pool = a_uncertainty_learner
         self.conclude(cb, test_pool, metric_name)
 
     @pytest.mark.parametrize('metric_name', Metrics('use_weights binclass').get_cases())
@@ -8462,7 +8505,7 @@ def convert_cat_columns_to_hashed(src_features_dataframe):
         return hashed_column
 
     new_columns_data = OrderedDict()
-    for column_name, column_data in src_features_dataframe.iteritems():
+    for column_name, column_data in src_features_dataframe.items():
         if column_data.dtype.name == 'category':
             new_columns_data[column_name] = create_hashed_categorical_column(column_data)
         else:
@@ -8578,7 +8621,7 @@ def test_fit_on_scipy_sparse_spmatrix(features_dtype, features_density):
 # NaNs in categorical values are not supported by CatBoost
 def make_catboost_compatible_categorical_missing_values(src_features_dataframe):
     new_columns_data = OrderedDict()
-    for column_name, column_data in src_features_dataframe.iteritems():
+    for column_name, column_data in src_features_dataframe.items():
         if column_data.dtype.name == 'category':
             column_data = column_data.cat.rename_categories([str(x) for x in column_data.cat.categories])
             column_data = column_data.cat.add_categories('').fillna('')
@@ -8590,7 +8633,7 @@ def make_catboost_compatible_categorical_missing_values(src_features_dataframe):
 
 def convert_to_sparse(src_features_dataframe, indexing_kind):
     new_columns_data = OrderedDict()
-    for column_name, column_data in src_features_dataframe.iteritems():
+    for column_name, column_data in src_features_dataframe.items():
         if column_data.dtype.name == 'category':
             fill_value = ''
         else:

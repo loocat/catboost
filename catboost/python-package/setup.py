@@ -741,8 +741,7 @@ if __name__ == '__main__':
             'sdist': sdist,
         },
         extras_require={
-            # TODO: fix for ipywidgets >= 8.0 (https://github.com/catboost/catboost/issues/2266)
-            'widget': ['traitlets', 'ipython', 'ipywidgets (>=7.0, <8.0)']
+            'widget': ['traitlets', 'ipython', 'ipywidgets (>=7.0, <9.0)']
         },
         author='CatBoost Developers',
         description='CatBoost Python Package',
@@ -761,14 +760,12 @@ if __name__ == '__main__':
             "Development Status :: 5 - Production/Stable",
             "Topic :: Scientific/Engineering :: Artificial Intelligence",
             "Topic :: Software Development :: Libraries :: Python Modules",
-            "License :: OSI Approved :: Apache License 2.0",
         ],
         install_requires=[
             'graphviz',
             'matplotlib',
             'numpy (>=1.16.0)',
-            # TODO: Compatibility with pandas 2.0 (https://github.com/catboost/catboost/issues/2320)
-            'pandas (>=0.24, <=1.5.0)',
+            'pandas (>=0.24)',
             'scipy',
             'plotly',
             'six',

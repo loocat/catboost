@@ -2564,7 +2564,7 @@ cdef object _set_features_order_data_pd_data_frame_sparse_column(
     ui32 flat_feature_idx,
     bool_t is_cat_feature,
     bool_t is_embedding_feature,
-    object column_values, # pd.SparseArray, but Cython requires cimport to provide type here
+    object column_values, # pandas.array.SparseArray, but Cython requires cimport to provide type here
     TVector[TString]* cat_factor_data,  # pass from parent to avoid reallocations
     IRawFeaturesOrderDataVisitor* builder_visitor
 ):
@@ -4748,7 +4748,7 @@ cdef class _CatBoost:
 
     cpdef _get_embedding_feature_indices(self):
         cdef TConstArrayRef[TEmbeddingFeature] arrayView = self.__model.ModelTrees.Get().GetEmbeddingFeatures()
-        return [] #feature.Position.FlatIndex for feature in arrayView]
+        return [feature.Position.FlatIndex for feature in arrayView]
 
     cpdef _get_float_feature_indices(self):
         cdef TConstArrayRef[TFloatFeature] arrayView = self.__model.ModelTrees.Get().GetFloatFeatures()

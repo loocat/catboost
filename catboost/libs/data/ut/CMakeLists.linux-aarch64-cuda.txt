@@ -16,7 +16,6 @@ target_link_libraries(catboost-libs-data-ut PUBLIC
   contrib-libs-linux-headers
   contrib-libs-cxxsupp
   yutil
-  cpp-malloc-jemalloc
   cpp-testing-unittest_main
   catboost-libs-data
   catboost-libs-cat_feature
@@ -35,6 +34,9 @@ target_link_options(catboost-libs-data-ut PRIVATE
   -lpthread
   -lrt
   -ldl
+  -lcudadevrt
+  -lculibos
+  -lcudart_static
 )
 target_sources(catboost-libs-data-ut PRIVATE
   ${CMAKE_SOURCE_DIR}/catboost/libs/data/ut/borders_io_ut.cpp
@@ -89,5 +91,8 @@ set_yunittest_property(
   PROPERTY
   PROCESSORS
   1
+)
+target_allocator(catboost-libs-data-ut
+  cpp-malloc-jemalloc
 )
 vcs_info(catboost-libs-data-ut)

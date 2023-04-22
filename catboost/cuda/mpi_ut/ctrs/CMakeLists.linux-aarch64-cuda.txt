@@ -12,9 +12,6 @@ target_link_libraries(ctrs PUBLIC
   contrib-libs-linux-headers
   contrib-libs-cxxsupp
   yutil
-  cpp-malloc-tcmalloc
-  libs-tcmalloc-no_percpu_cache
-  library-cpp-cpuid_check
   cpp-testing-unittest
   catboost-cuda-ctrs
   catboost-cuda-data
@@ -35,5 +32,8 @@ target_link_options(ctrs PRIVATE
 target_sources(ctrs PRIVATE
   ${CMAKE_SOURCE_DIR}/catboost/cuda/mpi_ut/main.cpp
   ${CMAKE_SOURCE_DIR}/catboost/cuda/ctrs/ut/test_ctrs.cpp
+)
+target_allocator(ctrs
+  cpp-malloc-jemalloc
 )
 vcs_info(ctrs)
