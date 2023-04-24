@@ -29,8 +29,7 @@ target_link_options(model_perftest PRIVATE
   -lculibos
   -lcudart_static
 )
-<<<<<<< HEAD
-=======
 target_allocator(model_perftest
   cpp-malloc-jemalloc
+)
 vcs_info(model_perftest)
